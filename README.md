@@ -1,27 +1,132 @@
-# Smoothscroll-for-windows
-![python version required](https://img.shields.io/static/v1?label=python&message=v3.11&color=0374b4&link=https://github.com/re1von/Smoothscroll-for-windows)  
-A free & simple script in python allow your mouse wheel to scroll smoothly on Windows 10/11.  
-![preview](https://github.com/re1von/Smoothscroll-for-windows/blob/main/project-assets/preview.gif)
+# SmoothScroll for Windows
 
-## Features
-- Let the mouse wheel scroll smoothly in all apps.
-- Allows customizing scroll behavior, such as the speed and acceleration.
-- Individual configuration for each app with the possibility of disabling it.
+![Python Version](https://img.shields.io/badge/python-3.11+-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
 
-## Requirements
-- python >= 3.11
-- requirements.txt  
-  - `python -m pip install -r requirements.txt`
+A modern, user-friendly GUI application for smooth scrolling on Windows. This is a fork of the original [Smoothscroll-for-windows](https://github.com/re1von/Smoothscroll-for-windows) by re1von, with significant GUI improvements.
 
-## Usage example
-`python main.py`
+## ✨ Features
 
-## Build example
-`pyinstaller --onefile --name SmoothScroll.exe --noconsole main.py`  
-*Please don't use pyinstaller, wait for [nuitka](https://github.com/Nuitka/Nuitka) to add support for python3.11
+- **Smooth Scrolling**: Provides inertial, customizable smooth scrolling for all Windows applications.
+- **Graphical User Interface**: Modern, intuitive GUI built with CustomTkinter.
+- **Per-Application Settings**: Configure scrolling behavior for specific applications or use global settings.
+- **System Tray Integration**: Minimize to tray, start automatically with Windows.
+- **Multi-Language Support**: English and Russian languages.
+- **Theme Support**: Light, Dark, and System appearance modes.
+- **Autostart**: Option to launch automatically on Windows startup.
+- **Configurable Parameters**:
+  - Acceleration and deceleration
+  - Scroll distance and duration
+  - Easing functions
+  - Horizontal scroll key modifier
+  - Pulse scaling
 
-## Dev tools
-- app-picker.py - outputs the absolute path to the executable file (.exe) under the cursor every second.
+## 🚀 Installation
 
-## Thanks
-- [Smoothscroll-for-websites](https://github.com/galambalazs/smoothscroll-for-websites)
+### Requirements
+- Python 3.11 or higher
+- Windows 10/11
+
+### Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+Required packages:
+- customtkinter
+- pystray
+- pywin32
+- easing-functions
+- Pillow
+
+### Building Executable
+To create a standalone .exe file:
+```bash
+pyinstaller --onefile --name SmoothScrollGUI.exe --icon icon.ico --add-data "icon.ico;." --add-data "icon.png;." --noconsole main.py
+```
+
+## 📖 Usage
+
+### Running the Application
+```bash
+# GUI Mode (default)
+python main.py
+
+# Console Mode
+python main.py --console
+
+# Tray Mode (for autostart)
+python main.py --tray
+```
+
+### GUI Overview
+
+#### Global Settings Tab
+Configure default scrolling behavior:
+- Distance: Scroll distance in pixels
+- Acceleration: Scroll speed multiplier
+- Opposite Acceleration: Reverse scroll speed
+- Acceleration Delta: Time-based acceleration
+- Acceleration Max: Maximum speed limit
+- Duration: Animation duration in milliseconds
+- Pulse Scale: Animation curve scaling
+- Inverted: Reverse scroll direction
+- Easing Function: Animation curve type
+- Horizontal Scroll Key: Modifier key for horizontal scrolling
+
+#### Applications Tab
+Manage per-application exceptions:
+- Add applications by path or regex pattern
+- Enable/disable scrolling for specific apps
+- Edit existing application rules
+
+#### App Settings Tab
+- Appearance Mode: System/Light/Dark theme
+- Language: English/Russian
+- Autostart: Enable/disable launch on Windows startup
+
+#### About Tab
+Information about the application, links to source code.
+
+### Configuration
+Settings are automatically saved to `config.json` in the application directory.
+
+
+## 🌍 Localization
+
+The application supports English and Russian languages. Language is saved in configuration and applied on startup.
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Original project: [Smoothscroll-for-windows](https://github.com/re1von/Smoothscroll-for-windows) by [re1von](https://github.com/re1von)
+- GUI Framework: [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter)
+- Easing Functions: [easing-functions](https://github.com/semitable/easing-functions)
+
+## 📞 Support
+
+If you encounter issues or have questions:
+1. Check the [Issues](https://github.com/vadenko/Smoothscroll-for-windows/issues) page
+2. Create a new issue with detailed information
+3. Include your system information and error logs
+
+## 🔄 Changelog
+
+### Version 1.0.0
+- Complete GUI overhaul with CustomTkinter
+- Multi-language support (EN/RU)
+- System tray integration
+- Autostart functionality
+- Per-application configuration
+- Standalone executable build support
