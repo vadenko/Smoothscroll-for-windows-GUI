@@ -10,6 +10,7 @@ import winreg
 import os
 import sys
 import webbrowser
+import tempfile
 
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -78,7 +79,13 @@ class Lang:
                 'config_load_success': 'Config loaded successfully',
                 'info': 'Information',
                 'about_title': 'About',
-                'about_text': 'This application provides smooth scrolling in all applications (except exceptions in settings) on Windows, with many settings, and most importantly - a graphical interface.\n\nThis application is a fork of the Smoothscroll-for-windows project by re1von (https://github.com/re1von/Smoothscroll-for-windows), main improvements - GUI.\n\nProject link: https://github.com/vadenko/Smoothscroll-for-windows-GUI\n\nVersion: 1.0.0'
+                'about_desc': 'This application provides smooth scrolling in all applications (except exceptions in settings) on Windows, with many settings, and most importantly - a graphical interface.',
+                'about_fork': 'This application is a fork of the',
+                'about_original': 'Smoothscroll-for-windows',
+                'about_improvements': 'project by re1von, main improvements - GUI.',
+                'about_link': 'Project link:',
+                'about_project_url': 'https://github.com/vadenko/Smoothscroll-for-windows-GUI',
+                'about_version': 'Version: 1.0.1'
             },
             'ru': {
                 'title': 'SmoothScroll GUI',
@@ -127,7 +134,13 @@ class Lang:
                 'config_load_success': 'Конфиг загружен успешно',
                 'info': 'Информация',
                 'about_title': 'О приложении',
-                'about_text': 'Это приложение для придания плавной прокрутки во всех приложениях (кроме исключений в настройках) в Windows, имеет множество настроек, и самое главное - графический интерфейс.\n\nДанное приложение - форк проекта Smoothscroll-for-windows от re1von (https://github.com/re1von/Smoothscroll-for-windows ), основные доработки - это GUI.\n\nСсылка на проект: https://github.com/vadenko/Smoothscroll-for-windows-GUI\n\nВерсия: 1.0.0'
+                'about_desc': 'Это приложение для придания плавной прокрутки во всех приложениях (кроме исключений в настройках) в Windows, имеет множество настроек, и самое главное - графический интерфейс.',
+                'about_fork': 'Это приложение является форком проекта',
+                'about_original': 'Smoothscroll-for-windows',
+                'about_improvements': 'от re1von, основные улучшения - GUI.',
+                'about_link': 'Ссылка на проект:',
+                'about_project_url': 'https://github.com/vadenko/Smoothscroll-for-windows-GUI',
+                'about_version': 'Версия: 1.0.1'
             }
         }
 
@@ -136,6 +149,15 @@ class Lang:
 
 class SmoothScrollGUI:
     def __init__(self, root, auto_start=False, start_minimized=False):
+        # Check for single instance
+        self.lock_file = os.path.join(tempfile.gettempdir(), "smoothscroll.lock")
+        if os.path.exists(self.lock_file):
+            messagebox.showerror("Error", "Application is already running.")
+            sys.exit(1)
+        else:
+            with open(self.lock_file, 'w') as f:
+                f.write(str(os.getpid()))
+
         self.root = root
         self.root.title("SmoothScroll for Windows GUI")
         self.root.geometry("900x780")
@@ -545,7 +567,8 @@ class SmoothScrollGUI:
         self.update_global_config()
         self.smooth_scroll = SmoothScroll(self.config)
         self.smooth_scroll.start(is_block=False)
-        messagebox.showinfo(self.lang.get('success'), self.lang.get('smoothscroll_started'))
+        if not self.auto_start:
+            messagebox.showinfo(self.lang.get('success'), self.lang.get('smoothscroll_started'))
 
     def stop_smooth_scroll(self):
         if self.smooth_scroll:
@@ -585,6 +608,8 @@ class SmoothScrollGUI:
         if self.smooth_scroll:
             self.smooth_scroll.join()
         self.tray_icon.stop()
+        if os.path.exists(self.lock_file):
+            os.remove(self.lock_file)
         self.root.quit()
 
     def is_autostart_enabled(self):
@@ -633,17 +658,17 @@ class SmoothScrollGUI:
         frame.pack(fill="both", expand=True, padx=10, pady=10)
 
         ctk.CTkLabel(frame, text=self.lang.get('about_title'), font=ctk.CTkFont(size=16, weight="bold")).pack(anchor="w", pady=5)
-        ctk.CTkLabel(frame, text="This application provides smooth scrolling in all applications (except exceptions in settings) on Windows, with many settings, and most importantly - a graphical interface.", wraplength=800, justify="left").pack(anchor="w", pady=10)
-        ctk.CTkLabel(frame, text="This application is a fork of the").pack(anchor="w")
-        link1 = ctk.CTkLabel(frame, text="Smoothscroll-for-windows", cursor="hand2", text_color="blue", font=ctk.CTkFont(underline=True))
+        ctk.CTkLabel(frame, text=self.lang.get('about_desc'), wraplength=800, justify="left").pack(anchor="w", pady=10)
+        ctk.CTkLabel(frame, text=self.lang.get('about_fork')).pack(anchor="w")
+        link1 = ctk.CTkLabel(frame, text=self.lang.get('about_original'), cursor="hand2", text_color="blue", font=ctk.CTkFont(underline=True))
         link1.pack(anchor="w")
         link1.bind("<Button-1>", lambda e: self.open_link("https://github.com/re1von/Smoothscroll-for-windows"))
-        ctk.CTkLabel(frame, text="project by re1von, main improvements - GUI.").pack(anchor="w")
-        ctk.CTkLabel(frame, text="Project link:").pack(anchor="w", pady=(10,0))
-        link2 = ctk.CTkLabel(frame, text="https://github.com/vadenko", cursor="hand2", text_color="blue", font=ctk.CTkFont(underline=True))
+        ctk.CTkLabel(frame, text=self.lang.get('about_improvements')).pack(anchor="w")
+        ctk.CTkLabel(frame, text=self.lang.get('about_link')).pack(anchor="w", pady=(10,0))
+        link2 = ctk.CTkLabel(frame, text=self.lang.get('about_project_url'), cursor="hand2", text_color="blue", font=ctk.CTkFont(underline=True))
         link2.pack(anchor="w")
         link2.bind("<Button-1>", lambda e: self.open_link("https://github.com/vadenko"))
-        ctk.CTkLabel(frame, text="Version: 1.0.0").pack(anchor="w", pady=(5,0))
+        ctk.CTkLabel(frame, text=self.lang.get('about_version')).pack(anchor="w", pady=(5,0))
 
 if __name__ == "__main__":
     root = ctk.CTk()
