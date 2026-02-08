@@ -11,6 +11,18 @@ import os
 import sys
 import webbrowser
 import tempfile
+import psutil
+
+
+def get_app_directory():
+    """ Get the application directory (where the app is installed) """
+    if getattr(sys, 'frozen', False):
+        # Running as PyInstaller executable
+        return os.path.dirname(sys.executable)
+    else:
+        # Running as Python script
+        return os.path.dirname(os.path.abspath(__file__))
+
 
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -18,7 +30,7 @@ def resource_path(relative_path):
         # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS
     except Exception:
-        base_path = os.path.abspath(".")
+        base_path = get_app_directory()
 
     return os.path.join(base_path, relative_path)
 
@@ -43,6 +55,7 @@ class Lang:
                 'appearance_mode': 'Appearance Mode',
                 'language': 'Language',
                 'autostart': 'Autostart with Windows',
+                'start_minimized': 'Start minimized to tray',
                 'distance': 'Distance (px, None for auto):',
                 'acceleration': 'Acceleration:',
                 'opposite_acceleration': 'Opposite Acceleration:',
@@ -85,7 +98,7 @@ class Lang:
                 'about_improvements': 'project by re1von, main improvements - GUI.',
                 'about_link': 'Project link:',
                 'about_project_url': 'https://github.com/vadenko/Smoothscroll-for-windows-GUI',
-                'about_version': 'Version: 1.0.1'
+                'about_version': 'Version: 1.0.2'
             },
             'ru': {
                 'title': 'SmoothScroll GUI',
@@ -98,6 +111,7 @@ class Lang:
                 'appearance_mode': 'Режим внешнего вида',
                 'language': 'Язык',
                 'autostart': 'Автозагрузка с Windows',
+                'start_minimized': 'Запускать свернутым',
                 'distance': 'Расстояние (px, None для авто):',
                 'acceleration': 'Ускорение:',
                 'opposite_acceleration': 'Обратное ускорение:',
@@ -140,7 +154,7 @@ class Lang:
                 'about_improvements': 'от re1von, основные улучшения - GUI.',
                 'about_link': 'Ссылка на проект:',
                 'about_project_url': 'https://github.com/vadenko/Smoothscroll-for-windows-GUI',
-                'about_version': 'Версия: 1.0.1'
+                'about_version': 'Версия: 1.0.2'
             }
         }
 
@@ -152,11 +166,27 @@ class SmoothScrollGUI:
         # Check for single instance
         self.lock_file = os.path.join(tempfile.gettempdir(), "smoothscroll.lock")
         if os.path.exists(self.lock_file):
-            messagebox.showerror("Error", "Application is already running.")
-            sys.exit(1)
-        else:
-            with open(self.lock_file, 'w') as f:
-                f.write(str(os.getpid()))
+            try:
+                with open(self.lock_file, 'r') as f:
+                    pid = int(f.read().strip())
+                
+                # Try to check if process is still running using psutil
+                if psutil.pid_exists(pid):
+                    messagebox.showerror("Error", "Application is already running.")
+                    sys.exit(1)
+                else:
+                    # Stale lock file, remove it
+                    os.remove(self.lock_file)
+            except (ValueError, OSError):
+                # Invalid PID or file read error, remove lock file
+                try:
+                    os.remove(self.lock_file)
+                except OSError:
+                    pass
+
+        # Create new lock file
+        with open(self.lock_file, 'w') as f:
+            f.write(str(os.getpid()))
 
         self.root = root
         self.root.title("SmoothScroll for Windows GUI")
@@ -408,6 +438,9 @@ class SmoothScrollGUI:
         ctk.CTkLabel(frame, text=self.lang.get('app_settings')).pack(anchor="w", pady=5, padx=10)
         self.autostart_var = ctk.BooleanVar(value=self.is_autostart_enabled())
         ctk.CTkCheckBox(frame, text=self.lang.get('autostart'), variable=self.autostart_var, command=self.toggle_autostart).pack(anchor="w", pady=2)
+        
+        self.start_minimized_var = ctk.BooleanVar(value=False)
+        ctk.CTkCheckBox(frame, text=self.lang.get('start_minimized'), variable=self.start_minimized_var).pack(anchor="w", pady=2)
 
     def change_appearance_mode(self, mode):
         ctk.set_appearance_mode(mode)
@@ -425,7 +458,7 @@ class SmoothScrollGUI:
         messagebox.showinfo(self.lang.get('info'), self.lang.get('appearance_applied') + " Для полного обновления перезапустите приложение.")
 
     def load_config(self):
-        config_path = os.path.join(os.getcwd(), "config.json")
+        config_path = os.path.join(get_app_directory(), "config.json")
         if os.path.exists(config_path):
             try:
                 with open(config_path, 'r') as f:
@@ -463,7 +496,7 @@ class SmoothScrollGUI:
 
     def save_config(self):
         self.update_global_config()
-        config_path = os.path.join(os.getcwd(), "config.json")
+        config_path = os.path.join(get_app_directory(), "config.json")
         try:
             data = self.serialize_config()
             with open(config_path, 'w') as f:
@@ -477,7 +510,8 @@ class SmoothScrollGUI:
             "apps": [],
             "gui_settings": {
                 "appearance_mode": self.appearance_var.get(),
-                "language": self.lang.lang
+                "language": self.lang.lang,
+                "start_minimized": self.start_minimized_var.get()
             }
         }
         for app in self.config.app_configs:
@@ -559,6 +593,13 @@ class SmoothScrollGUI:
         # Update GUI settings
         self.appearance_var.set(self.gui_settings.get("appearance_mode", "System"))
         self.language_var.set(self.lang.lang)
+        self.start_minimized_var.set(self.gui_settings.get("start_minimized", False))
+        
+        # Apply start_minimized from config if not explicitly set via command line
+        if self.gui_settings.get("start_minimized", False) and not self.start_minimized:
+            self.start_minimized = True
+            self.auto_start = True  # Also auto-start SmoothScroll
+            self.root.after(100, self.on_close)
 
     def start_smooth_scroll(self):
         if self.smooth_scroll:
@@ -629,9 +670,19 @@ class SmoothScrollGUI:
 
     def enable_autostart(self):
         try:
-            exe_path = os.path.abspath(sys.executable if getattr(sys, 'frozen', False) else __file__)
+            if getattr(sys, 'frozen', False):
+                # Running as PyInstaller executable
+                exe_path = os.path.abspath(sys.executable)
+            else:
+                # Running as Python script - need full path to pythonw.exe
+                python_exe = os.path.join(os.path.dirname(sys.executable), 'pythonw.exe')
+                if not os.path.exists(python_exe):
+                    python_exe = sys.executable
+                script_path = os.path.join(get_app_directory(), os.path.basename(__file__))
+                exe_path = f'"{python_exe}" "{script_path}" --tray'
+            
             key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run", 0, winreg.KEY_SET_VALUE)
-            winreg.SetValueEx(key, "SmoothScroll", 0, winreg.REG_SZ, f'"{exe_path}" --tray')
+            winreg.SetValueEx(key, "SmoothScroll", 0, winreg.REG_SZ, exe_path)
             winreg.CloseKey(key)
             messagebox.showinfo(self.lang.get('success'), self.lang.get('autostart_enabled'))
         except Exception as e:

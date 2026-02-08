@@ -42,6 +42,7 @@ if __name__ == '__main__':
         import customtkinter as ctk
         from gui import SmoothScrollGUI
         root = ctk.CTk()
+        root.withdraw()  # Скрыть окно сразу
         app = SmoothScrollGUI(root, auto_start=True, start_minimized=True)
         root.mainloop()
     else:
